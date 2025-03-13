@@ -20,34 +20,6 @@ public class Client {
   ILicensing licensing = null;
   ILicenseManager manager = null;
 
-  public static class Feature {
-    public String name;
-    public String version;
-
-    private Feature(final String name, final String version) {
-      this.name = name;
-      this.version = version;
-    }
-
-    public static Feature of(final String name, final String version) {
-      return new Feature(name, version);
-    }
-  }
-
-  public static class Entry {
-    public final String key;
-    public final String value;
-
-    private Entry(final String key, final String value) {
-      this.key = key;
-      this.value = value;
-    }
-
-    public static Entry of(final String key, final String value) {
-      return new Entry(key, value);
-    }
-  }
-
   public class ServerToken {
     public final String id;
     public final String clsid;
@@ -57,10 +29,10 @@ public class Client {
       this.clsid = clsid;
     }
 
-    public void report(final Feature feature, final long count, final Entry...vd) throws FlxException {
+    public void report(final ReportType type, final long count, final Entry...vd) throws FlxException {
       final ICapabilityRequestOptions options = manager.createCapabilityRequestOptions();
       options.setRequestOperation(SharedConstants.RequestOperation.REPORT);
-      options.addDesiredFeature(feature.name, feature.version, count);
+      options.addDesiredFeature(type.feature.name, type.feature.version, count);
 
       if (Objects.nonNull(vd)) {
         options.includeVendorDictionary(true);

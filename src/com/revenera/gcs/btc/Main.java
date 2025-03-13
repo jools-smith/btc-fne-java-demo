@@ -2,6 +2,7 @@ package com.revenera.gcs.btc;
 
 import com.flexnet.lm.FlxException;
 
+import static com.revenera.gcs.btc.ReportType.*;
 import static flxexamples.IdentityClient.IDENTITY_DATA;
 
 public class Main {
@@ -19,11 +20,12 @@ public class Main {
 
       final Client.ServerToken token = client.createServerToken("X6Z5CAX64BLR");
 
-      final Client.Feature feature = Client.Feature.of("name", "0");
-      final Client.Entry p1 = Client.Entry.of("name", "jools");
-      final Client.Entry p2 = Client.Entry.of("company", "revenera");
-      token.report(feature, 1L, p1, p2);
-
+      token.report(DesignImport, 1L);
+      token.report(DesignCommit, 1L);
+      token.report(DesignExport, 1L);
+      token.report(DesignExportXml, 1L);
+      token.report(DesignExportExcel, 1L);
+      token.report(SimulationStart, 1L, Entry.of("name", "jools"), Entry.of("company", "revenera"));
 
       client.terminate();
     }
