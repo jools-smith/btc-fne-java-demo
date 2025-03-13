@@ -1,9 +1,6 @@
 package com.revenera.gcs.btc;
 
-import com.flexnet.licensing.client.ICapabilityRequestOptions;
-import com.flexnet.licensing.client.ILicenseManager;
-import com.flexnet.licensing.client.ILicensing;
-import com.flexnet.licensing.client.LicensingFactory;
+import com.flexnet.licensing.client.*;
 import com.flexnet.lm.FlxException;
 import com.flexnet.lm.SharedConstants;
 import com.flexnet.lm.net.Comm;
@@ -37,18 +34,17 @@ public class Client {
     }
   }
 
-
-  public static class Pair {
+  public static class Entry {
     public final String key;
     public final String value;
 
-    private Pair(final String key, final String value) {
+    private Entry(final String key, final String value) {
       this.key = key;
       this.value = value;
     }
 
-    public static Pair of(final String key, final String value) {
-      return new Pair(key, value);
+    public static Entry of(final String key, final String value) {
+      return new Entry(key, value);
     }
   }
 
@@ -61,14 +57,14 @@ public class Client {
       this.clsid = clsid;
     }
 
-    public void report(final Feature feature, final long count, final Pair...vd) throws FlxException {
+    public void report(final Feature feature, final long count, final Entry...vd) throws FlxException {
       final ICapabilityRequestOptions options = manager.createCapabilityRequestOptions();
       options.setRequestOperation(SharedConstants.RequestOperation.REPORT);
       options.addDesiredFeature(feature.name, feature.version, count);
 
       if (Objects.nonNull(vd)) {
         options.includeVendorDictionary(true);
-        for (final Pair item : vd) {
+        for (final Entry item : vd) {
           options.addVendorDictionaryItem(item.key, item.value);
         }
       }
@@ -78,6 +74,12 @@ public class Client {
       final byte[] request = manager.generateCapabilityRequest(options);
 
       final byte[] response = Comm.getHttpInstance(getServerUrl(clsid)).sendBinaryMessage(request);
+
+      //TODO: debug
+      final ICapabilityResponseData capabilityResponse = manager.getResponseDetails(response);
+      capabilityResponse.getResponseStatus().forEach(status -> {
+        System.err.println(status.getDetails());
+      });
     }
   }
 
@@ -94,7 +96,7 @@ public class Client {
         Optional.ofNullable(e.getMessage()).ifPresent(this::add);
         Optional.ofNullable(e.getArguments()).ifPresent(x -> this.addAll(Arrays.asList(x)));
       }
-    }.stream().map(Object::toString).collect(Collectors.joining("|"));
+    }.stream().map(Object::toString).collect(Collectors.joining("\n"));
   }
 
   private Client() {

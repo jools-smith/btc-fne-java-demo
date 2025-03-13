@@ -20,8 +20,8 @@ public class Main {
       final Client.ServerToken token = client.createServerToken("X6Z5CAX64BLR");
 
       final Client.Feature feature = Client.Feature.of("name", "0");
-      final Client.Pair p1 = Client.Pair.of("name", "jools");
-      final Client.Pair p2 = Client.Pair.of("company", "revenera");
+      final Client.Entry p1 = Client.Entry.of("name", "jools");
+      final Client.Entry p2 = Client.Entry.of("company", "revenera");
       token.report(feature, 1L, p1, p2);
 
 
