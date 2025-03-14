@@ -1,4 +1,4 @@
-package com.revenera.gcs.btc;
+package com.revenera.gcs.btc.fne;
 
 public enum ReportType {
   SimulationStart("simulation.start","1"),
@@ -9,7 +9,8 @@ public enum ReportType {
   DesignExportExcel("design.export.excel","1");
 
   public final Feature feature;
-  private ReportType(final String name, final String version) {
+
+  ReportType(final String name, final String version) {
     this.feature = Feature.of(name, version);
   }
 }

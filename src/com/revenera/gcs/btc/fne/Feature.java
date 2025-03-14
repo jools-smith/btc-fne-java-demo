@@ -1,4 +1,4 @@
-package com.revenera.gcs.btc;
+package com.revenera.gcs.btc.fne;
 
 public class Feature {
   public String name;

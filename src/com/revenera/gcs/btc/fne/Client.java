@@ -1,4 +1,4 @@
-package com.revenera.gcs.btc;
+package com.revenera.gcs.btc.fne;
 
 import com.flexnet.licensing.client.*;
 import com.flexnet.lm.FlxException;
@@ -7,6 +7,7 @@ import com.flexnet.lm.net.Comm;
 
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 public class Client {
@@ -20,47 +21,81 @@ public class Client {
   ILicensing licensing = null;
   ILicenseManager manager = null;
 
-  public class ServerToken {
+  /**
+   * Opaque class to use for reporting - no knowledge of underlying FNE required
+   */
+  public class Requester {
     public final String id;
     public final String clsid;
 
-    private ServerToken(final String clsid) {
-      this.id = UUID.randomUUID().toString();
+    /**
+     * Opaque class to use for building and submitting usage requests
+     */
+    public final class  Request {
+      final ReportType type;
+      final AtomicLong count = new AtomicLong(1L);
+      final Map<String, String> metadata = new LinkedHashMap<>();
+
+      Request(final ReportType type){
+        this.type = type;
+      }
+
+      public Request withCount(final long value) {
+        this.count.getAndSet(value);
+        return this;
+      }
+
+      public <E extends Enum<E>> Request withMetadata(final E key, final Object value) {
+        this.metadata.put(key.toString(), value.toString());
+        return this;
+      }
+
+      public void submit() throws FlxException {
+        final ICapabilityRequestOptions options = manager.createCapabilityRequestOptions();
+        options.setRequestOperation(SharedConstants.RequestOperation.REPORT);
+        options.addDesiredFeature(type.feature.name, type.feature.version, this.count.get());
+
+        // add VD items to request
+        if (!metadata.isEmpty()) {
+          options.includeVendorDictionary(true);
+
+          metadata.forEach(options::addVendorDictionaryItem);
+        }
+
+        options.setRequestorId(id);
+
+        final byte[] request = manager.generateCapabilityRequest(options);
+
+        final byte[] response = Comm.getHttpInstance(getServerUrl(clsid)).sendBinaryMessage(request);
+
+        //TODO: debug
+        final ICapabilityResponseData capabilityResponse = manager.getResponseDetails(response);
+        capabilityResponse.getResponseStatus().forEach(status -> {
+          System.err.println(status.getDetails());
+        });
+      }
+    }
+
+    private Requester(final String clsid) {
+      this(UUID.randomUUID().toString(), clsid);
+    }
+
+    private Requester(final String id, final String clsid) {
+      this.id = id;
       this.clsid = clsid;
     }
 
-    public void report(final ReportType type, final long count, final Entry...vd) throws FlxException {
-      final ICapabilityRequestOptions options = manager.createCapabilityRequestOptions();
-      options.setRequestOperation(SharedConstants.RequestOperation.REPORT);
-      options.addDesiredFeature(type.feature.name, type.feature.version, count);
-
-      if (Objects.nonNull(vd)) {
-        options.includeVendorDictionary(true);
-        for (final Entry item : vd) {
-          options.addVendorDictionaryItem(item.key, item.value);
-        }
-      }
-
-      options.setRequestorId(id);
-
-      final byte[] request = manager.generateCapabilityRequest(options);
-
-      final byte[] response = Comm.getHttpInstance(getServerUrl(clsid)).sendBinaryMessage(request);
-
-      //TODO: debug
-      final ICapabilityResponseData capabilityResponse = manager.getResponseDetails(response);
-      capabilityResponse.getResponseStatus().forEach(status -> {
-        System.err.println(status.getDetails());
-      });
+    public Request request(final ReportType type) {
+      return new Request(type);
     }
   }
 
-
+  // load native library
   static {
     System.loadLibrary("FlxCore64");
   }
 
-  static String getErrorDetails(final FlxException e) {
+  public static String getErrorDetails(final FlxException e) {
     return new ArrayList<Object>() {
       {
         Optional.ofNullable(e.getKey()).ifPresent(this::add);
@@ -75,8 +110,8 @@ public class Client {
 
   }
 
-  public ServerToken createServerToken(final String clsid) {
-    return new ServerToken(clsid);
+  public Requester createAnonymousRequester(final String clsid) {
+    return new Requester(clsid);
   }
 
   public Client withPublisher(final String tenant, final String domain) {
@@ -134,7 +169,7 @@ public class Client {
     return this.licensing != null && this.manager != null;
   }
 
-  void terminate() {
+  public void terminate() {
     this.licensing.close();
   }
 
