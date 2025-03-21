@@ -52,7 +52,9 @@ public class Client {
 
       public void submit() throws FlxException {
         final ICapabilityRequestOptions options = manager.createCapabilityRequestOptions();
+        //REPORT == usage
         options.setRequestOperation(SharedConstants.RequestOperation.REPORT);
+
         options.addDesiredFeature(type.feature.name, type.feature.version, this.count.get());
 
         // add VD items to request
@@ -69,10 +71,12 @@ public class Client {
         final byte[] response = Comm.getHttpInstance(getServerUrl(clsid)).sendBinaryMessage(request);
 
         //TODO: debug
-        final ICapabilityResponseData capabilityResponse = manager.getResponseDetails(response);
-        capabilityResponse.getResponseStatus().forEach(status -> {
-          System.err.println(status.getDetails());
-        });
+        if (Objects.nonNull(response) && response.length > 0) {
+          final ICapabilityResponseData capabilityResponse = manager.getResponseDetails(response);
+          capabilityResponse.getResponseStatus().forEach(status -> {
+            System.err.println(status.getDetails());
+          });
+        }
       }
     }
 

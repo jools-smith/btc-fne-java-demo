@@ -1,12 +1,12 @@
 package com.revenera.gcs.btc.fne;
 
 public enum ReportType {
-  SimulationStart("simulation.start","1"),
-  DesignImport("design.import","1"),
-  DesignCommit("design.commit","1"),
-  DesignExport("des.ign.export","1"),
-  DesignExportXml("design.export.xml","1"),
-  DesignExportExcel("design.export.excel","1");
+  SimulationStart("simulation.start","2025"),
+  DesignImport("design.import","2025"),
+  DesignCommit("design.commit","2025"),
+  DesignExport("design.export","2025"),
+  DesignExportXml("design.export.xml","2025"),
+  DesignExportExcel("design.export.excel","2025");
 
   public final Feature feature;
 

@@ -1,49 +1,64 @@
 package com.revenera.gcs.btc;
 
 import com.flexnet.lm.FlxException;
+import com.revenera.gcs.btc.fne.Client;
 
-import com.revenera.gcs.btc.fne.*;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-import static com.revenera.gcs.btc.Metadata.*;
+import static com.revenera.gcs.btc.Main.Metadata.*;
 import static com.revenera.gcs.btc.fne.ReportType.*;
 import static flxexamples.IdentityClient.IDENTITY_DATA;
 
-enum Metadata {
-  USER, OS, MACHINE, OTHER
-}
+
 
 public class Main {
+
+  enum Metadata {
+    USER_NAME, OS_NAME, OS_ARCH, OS_VERSION, MACHINE_NAME
+  }
+
   public static void main(final String...args) {
     System.out.println("hello...");
-    try {
 
+    try {
       final Client client = Client
               .create()
-              //TODO: this needs to be BTC identity
               .withIdentity(IDENTITY_DATA)
-              //TODO: specification of host-id or user-id needs to be completed
               .withHostId("A249CC37-C6F2-463F-AD5C-C924CA9A6BC1")
               .withHostName("BTC Test Client")
-              .withPublisher("flex1115-uat", "com")
+              .withPublisher("flex1850-uat", "com")
               .initialize();
 
-      final Client.Requester requester = client.createAnonymousRequester("X6Z5CAX64BLR");
+      final Client.Requester requester = client.createAnonymousRequester("0H37CS91CG51");
 
+      final List<CompletableFuture<?>> futures = new ArrayList<>();
 
-      requester.request(DesignImport).submit();
-      requester.request(DesignCommit).submit();
-      requester.request(DesignExport).submit();
-      requester.request(DesignExportXml).submit();
+      requester.request(DesignImport)
+               .submit();
+
+      requester.request(DesignCommit)
+               .submit();
+
+      requester.request(DesignExport)
+               .submit();
+
+      requester.request(DesignExportXml)
+               .submit();
 
       requester.request(DesignExportExcel)
-              .withCount(1)
-              .submit();
+               .withCount(2)
+               .submit();
 
       requester.request(SimulationStart)
-               .withCount(10)
-               .withMetadata(USER, "")
-               .withMetadata(OS, "")
-               .withMetadata(MACHINE, "")
+               .withCount(1)
+               .withMetadata(USER_NAME, System.getProperty("user.name"))
+               .withMetadata(OS_NAME, System.getProperty("os.name"))
+               .withMetadata(OS_VERSION, System.getProperty("os.version"))
+               .withMetadata(OS_ARCH, System.getProperty("os.arch"))
+               .withMetadata(MACHINE_NAME, InetAddress.getLocalHost().getHostName())
                .submit();
 
       client.terminate();
