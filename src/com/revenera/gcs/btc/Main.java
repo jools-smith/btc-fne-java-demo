@@ -1,50 +1,42 @@
 package com.revenera.gcs.btc;
 
 import com.flexnet.lm.FlxException;
+import com.revenera.gcs.btc.fne.Client;
+import com.revenera.gcs.btc.fne.ReportType;
+import flxexamples.IdentityClient;
 
-import com.revenera.gcs.btc.fne.*;
+import java.net.InetAddress;
 
-import static com.revenera.gcs.btc.Metadata.*;
-import static com.revenera.gcs.btc.fne.ReportType.*;
-import static flxexamples.IdentityClient.IDENTITY_DATA;
-
-enum Metadata {
-  USER, OS, MACHINE, OTHER
-}
+import static com.revenera.gcs.btc.Main.Metadata.*;
 
 public class Main {
+
+  enum Metadata {
+    USER_NAME, OS_NAME, OS_ARCH, OS_VERSION, MACHINE_NAME
+  }
+
   public static void main(final String...args) {
     System.out.println("hello...");
-    try {
 
+    try {
       final Client client = Client
               .create()
-              //TODO: this needs to be BTC identity
-              .withIdentity(IDENTITY_DATA)
-              //TODO: specification of host-id or user-id needs to be completed
+              .withIdentity(IdentityClient.IDENTITY_DATA)
               .withHostId("A249CC37-C6F2-463F-AD5C-C924CA9A6BC1")
-              .withHostName("BTC Test Client")
-              .withPublisher("flex1115-uat", "com")
+              .withHostName("Revenera Test Client")
+              .withPublisher("flex13064-uat", "eu")
               .initialize();
 
-      final Client.Requester requester = client.createAnonymousRequester("X6Z5CAX64BLR");
-
-
-      requester.request(DesignImport).submit();
-      requester.request(DesignCommit).submit();
-      requester.request(DesignExport).submit();
-      requester.request(DesignExportXml).submit();
-
-      requester.request(DesignExportExcel)
-              .withCount(1)
-              .submit();
-
-      requester.request(SimulationStart)
-               .withCount(10)
-               .withMetadata(USER, "")
-               .withMetadata(OS, "")
-               .withMetadata(MACHINE, "")
-               .submit();
+      final Client.RequestBuilder builder = client.createAnonymousRequestBuilder("5RF8TJB7Z1H7");
+      
+      builder.request(ReportType.EmbeddedTester)
+             .withCount(1)
+             .withMetadata(USER_NAME, System.getProperty("user.name"))
+             .withMetadata(OS_NAME, System.getProperty("os.name"))
+             .withMetadata(OS_VERSION, System.getProperty("os.version"))
+             .withMetadata(OS_ARCH, System.getProperty("os.arch"))
+             .withMetadata(MACHINE_NAME, InetAddress.getLocalHost().getHostName())
+             .submit();
 
       client.terminate();
     }

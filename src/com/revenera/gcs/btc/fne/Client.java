@@ -24,7 +24,7 @@ public class Client {
   /**
    * Opaque class to use for reporting - no knowledge of underlying FNE required
    */
-  public class Requester {
+  public class RequestBuilder {
     public final String id;
     public final String clsid;
 
@@ -33,15 +33,16 @@ public class Client {
      */
     public final class  Request {
       final ReportType type;
-      final AtomicLong count = new AtomicLong(1L);
+      long count;
       final Map<String, String> metadata = new LinkedHashMap<>();
 
       Request(final ReportType type){
         this.type = type;
+        this.count = 1L;
       }
 
       public Request withCount(final long value) {
-        this.count.getAndSet(value);
+        this.count = value;
         return this;
       }
 
@@ -52,10 +53,12 @@ public class Client {
 
       public void submit() throws FlxException {
         final ICapabilityRequestOptions options = manager.createCapabilityRequestOptions();
+        //REPORT == usage
         options.setRequestOperation(SharedConstants.RequestOperation.REPORT);
-        options.addDesiredFeature(type.feature.name, type.feature.version, this.count.get());
 
-        // add VD items to request
+        options.addDesiredFeature(type.feature.name, type.feature.version, this.count);
+
+        // add VendorDictionary items to request
         if (!metadata.isEmpty()) {
           options.includeVendorDictionary(true);
 
@@ -69,18 +72,20 @@ public class Client {
         final byte[] response = Comm.getHttpInstance(getServerUrl(clsid)).sendBinaryMessage(request);
 
         //TODO: debug
-        final ICapabilityResponseData capabilityResponse = manager.getResponseDetails(response);
-        capabilityResponse.getResponseStatus().forEach(status -> {
-          System.err.println(status.getDetails());
-        });
+        if (Objects.nonNull(response) && response.length > 0) {
+          final ICapabilityResponseData capabilityResponse = manager.getResponseDetails(response);
+          capabilityResponse.getResponseStatus().forEach(status -> {
+            System.err.println(status.getDetails());
+          });
+        }
       }
     }
 
-    private Requester(final String clsid) {
+    private RequestBuilder(final String clsid) {
       this(UUID.randomUUID().toString(), clsid);
     }
 
-    private Requester(final String id, final String clsid) {
+    private RequestBuilder(final String id, final String clsid) {
       this.id = id;
       this.clsid = clsid;
     }
@@ -110,8 +115,8 @@ public class Client {
 
   }
 
-  public Requester createAnonymousRequester(final String clsid) {
-    return new Requester(clsid);
+  public RequestBuilder createAnonymousRequestBuilder(final String clsid) {
+    return new RequestBuilder(clsid);
   }
 
   public Client withPublisher(final String tenant, final String domain) {
