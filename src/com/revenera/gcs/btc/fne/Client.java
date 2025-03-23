@@ -24,7 +24,7 @@ public class Client {
   /**
    * Opaque class to use for reporting - no knowledge of underlying FNE required
    */
-  public class RequestBuilder {
+  public class Requester {
     public final String id;
     public final String clsid;
 
@@ -33,16 +33,15 @@ public class Client {
      */
     public final class  Request {
       final ReportType type;
-      long count;
+      final AtomicLong count = new AtomicLong(1L);
       final Map<String, String> metadata = new LinkedHashMap<>();
 
       Request(final ReportType type){
         this.type = type;
-        this.count = 1L;
       }
 
       public Request withCount(final long value) {
-        this.count = value;
+        this.count.getAndSet(value);
         return this;
       }
 
@@ -56,9 +55,9 @@ public class Client {
         //REPORT == usage
         options.setRequestOperation(SharedConstants.RequestOperation.REPORT);
 
-        options.addDesiredFeature(type.feature.name, type.feature.version, this.count);
+        options.addDesiredFeature(type.feature.name, type.feature.version, this.count.get());
 
-        // add VendorDictionary items to request
+        // add VD items to request
         if (!metadata.isEmpty()) {
           options.includeVendorDictionary(true);
 
@@ -81,11 +80,11 @@ public class Client {
       }
     }
 
-    private RequestBuilder(final String clsid) {
+    private Requester(final String clsid) {
       this(UUID.randomUUID().toString(), clsid);
     }
 
-    private RequestBuilder(final String id, final String clsid) {
+    private Requester(final String id, final String clsid) {
       this.id = id;
       this.clsid = clsid;
     }
@@ -115,8 +114,8 @@ public class Client {
 
   }
 
-  public RequestBuilder createAnonymousRequestBuilder(final String clsid) {
-    return new RequestBuilder(clsid);
+  public Requester createAnonymousRequester(final String clsid) {
+    return new Requester(clsid);
   }
 
   public Client withPublisher(final String tenant, final String domain) {
