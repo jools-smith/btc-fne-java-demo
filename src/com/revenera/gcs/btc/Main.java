@@ -27,7 +27,7 @@ public class Main {
               .withPublisher("flex13064-uat", "eu")
               .initialize();
 
-      final Client.RequestBuilder builder = client.createAnonymousRequestBuilder("5RF8TJB7Z1H7");
+      final Client.Requester builder = client.createAnonymousRequester("5RF8TJB7Z1H7");
       
       builder.request(ReportType.EmbeddedTester)
              .withCount(1)
